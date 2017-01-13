@@ -41,6 +41,10 @@ namespace ThinkingHome.SerialPort
                 result.AddRange(
                     Directory.GetFiles("/dev/", "tty*")
                         .Where(dev => regex.IsMatch(dev)));
+
+                result.AddRange(
+                    Directory.GetFiles("/dev/", "cu*")
+                        .Where(dev => regex.IsMatch(dev)));
             }
 
             return result.ToArray();
