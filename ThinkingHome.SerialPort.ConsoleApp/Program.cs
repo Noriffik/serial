@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -58,7 +59,10 @@ namespace ThinkingHome.SerialPort.ConsoleApp
         private static extern int close(int fd);
 
         [DllImport("libc")]
-        private static extern int read(int fd, IntPtr buf, uint count);
+        private static extern int read(int fd, IntPtr buf, int count);
+
+        [DllImport("libc")]
+        private static extern int write(int fd, IntPtr buf, int count);
 
         [DllImport("libc")]
         private static extern int tcsetattr(int fd, int optional_actions, byte[] termios_data);
@@ -77,10 +81,10 @@ namespace ThinkingHome.SerialPort.ConsoleApp
             //return;
 
             var file = "/Users/dima117a/init2.lua";
-            var portName2 = "/dev/tty.usbserial-AI04XT35";
+            var portName2 = "/dev/cu.usbserial-A10132ON";
             var portName3 = "/dev/cu.usbserial-AI04XT35";
 
-            int fd = open(portName3, OpenFlags.O_RDWR | OpenFlags.O_NOCTTY | OpenFlags.O_NONBLOCK);
+            int fd = open(portName2, OpenFlags.O_RDWR | OpenFlags.O_NOCTTY | OpenFlags.O_NONBLOCK);
 
             if (fd == -1)
             {
@@ -95,10 +99,26 @@ namespace ThinkingHome.SerialPort.ConsoleApp
                 Console.WriteLine(tcgetattr(fd, termios_data));
                 WriteArray(termios_data);
 
-                Console.WriteLine(cfsetspeed(termios_data, Speed.B1152000));
+                Console.WriteLine(cfsetspeed(termios_data, Speed.B9600));
                 WriteArray(termios_data);
 
                 Console.WriteLine(tcsetattr(fd, 0, termios_data));
+
+//                byte[] buf = Encoding.ASCII.GetBytes("8");
+//                IntPtr ptr = Marshal.AllocHGlobal(buf.Length);
+//                Marshal.Copy(buf, 0, ptr, buf.Length);
+//
+//                Console.WriteLine(write(fd, ptr, buf.Length));
+//                Thread.Sleep(5000);
+//                Marshal.FreeHGlobal(ptr);
+                byte bbb = 0;
+                IntPtr ptr = Marshal.AllocHGlobal(1);
+
+                while (true)
+                {
+                    read(fd, ptr, 1);
+                    Console.Write(Marshal.PtrToStringAnsi(ptr));
+                }
 
 
                 Console.WriteLine(close(fd));
