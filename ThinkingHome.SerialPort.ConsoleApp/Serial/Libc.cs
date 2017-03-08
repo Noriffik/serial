@@ -27,6 +27,6 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
         public static extern int tcsetattr(int fd, int optional_actions, byte[] termios_data);
 
         [DllImport("libc")]
-        public static extern int cfsetspeed(byte[] termios_data, SerialSpeed speed);
+        public static extern int cfsetspeed(byte[] termios_data, BaudRate speed);
     }
 }

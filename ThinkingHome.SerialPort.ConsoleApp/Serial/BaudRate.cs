@@ -1,6 +1,6 @@
 ﻿namespace ThinkingHome.SerialPort.ConsoleApp.Serial
 {
-    public enum SerialSpeed : long
+    public enum BaudRate : long
     {
         B1200 = 1200,
         B2400 = 2400,

@@ -28,41 +28,12 @@ namespace ThinkingHome.SerialPort.ConsoleApp
 
             data[15] = (byte)(sum % 256);
 
-            var portName = "/dev/cu.usbserial-AI04XT35";
-
-            int fd = Libc.open(portName, OpenFlags.O_RDWR | OpenFlags.O_NOCTTY | OpenFlags.O_NONBLOCK);
-
-            if (fd == -1)
+            using (var device = SerialDevice.Create("/dev/cu.usbserial-AI04XT35", BaudRate.B9600))
             {
-                Console.WriteLine($"failed to open port ({fd})");
+                device.Open();
+
+                device.Write(data);
             }
-            else
-            {
-                Console.WriteLine($"open: {fd}");
-
-                byte[] termios_data = new byte[256];
-
-                Libc.tcgetattr(fd, termios_data);
-                Libc.cfsetspeed(termios_data, SerialSpeed.B9600);
-                Libc.tcsetattr(fd, 0, termios_data);
-
-                IntPtr ptr = Marshal.AllocHGlobal(data.Length);
-                Marshal.Copy(data, 0, ptr, data.Length);
-
-                Libc.write(fd, ptr, data.Length);
-
-//                byte bbb = 0;
-//                IntPtr ptr = Marshal.AllocHGlobal(1);
-//
-//                while (true)
-//                {
-//                    read(fd, ptr, 1);
-//                    Console.Write(Marshal.PtrToStringAnsi(ptr));
-//                }
-
-                Libc.close(fd);
-            }
-
         }
 
         public static void Main(string[] args)
@@ -93,5 +64,15 @@ namespace ThinkingHome.SerialPort.ConsoleApp
 //        {
 //            Console.WriteLine(string.Join("", data.Select(x => x.ToString("x2"))));
 //        }
+
+//                byte bbb = 0;
+//                IntPtr ptr = Marshal.AllocHGlobal(1);
+//
+//                while (true)
+//                {
+//                    read(fd, ptr, 1);
+//                    Console.Write(Marshal.PtrToStringAnsi(ptr));
+//                }
+
     }
 }
