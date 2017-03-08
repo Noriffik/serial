@@ -70,6 +70,65 @@ namespace ThinkingHome.SerialPort.ConsoleApp
         [DllImport("libc")]
         private static extern int cfsetspeed(byte[] termios_data, Speed speed);
 
+        private static void Send()
+        {
+            var data = new byte[17] {
+                171, //start
+                2, //mode
+                0, //cmd mode
+                0,
+                0, // channel
+                0, //cmd
+                0, //fmt
+                0,0,0,0, //data
+                0,0,0,0, //address
+                0,
+                172 //end
+            };
+
+
+            int sum = 0;
+            for (int i = 0; i < 15; i++) sum += data[i];
+
+            data[15] = (byte)(sum % 256);
+
+            var portName = "/dev/cu.usbserial-AI04XT35";
+
+            int fd = open(portName, OpenFlags.O_RDWR | OpenFlags.O_NOCTTY | OpenFlags.O_NONBLOCK);
+
+            if (fd == -1)
+            {
+                Console.WriteLine($"failed to open port ({fd})");
+            }
+            else
+            {
+                Console.WriteLine($"open: {fd}");
+
+                byte[] termios_data = new byte[256];
+
+                tcgetattr(fd, termios_data);
+                cfsetspeed(termios_data, Speed.B9600);
+                tcsetattr(fd, 0, termios_data);
+
+                IntPtr ptr = Marshal.AllocHGlobal(data.Length);
+                Marshal.Copy(data, 0, ptr, data.Length);
+
+                write(fd, ptr, data.Length);
+
+//                byte bbb = 0;
+//                IntPtr ptr = Marshal.AllocHGlobal(1);
+//
+//                while (true)
+//                {
+//                    read(fd, ptr, 1);
+//                    Console.Write(Marshal.PtrToStringAnsi(ptr));
+//                }
+
+                close(fd);
+            }
+
+        }
+
         public static void Main(string[] args)
         {
             foreach (var portName in SerialPort.GetPortNames())
@@ -78,51 +137,9 @@ namespace ThinkingHome.SerialPort.ConsoleApp
             }
 
             Console.WriteLine("=====");
-            //return;
 
-            var file = "/Users/dima117a/init2.lua";
-            var portName2 = "/dev/cu.usbserial-A10132ON";
-            var portName3 = "/dev/cu.usbserial-AI04XT35";
-
-            int fd = open(portName2, OpenFlags.O_RDWR | OpenFlags.O_NOCTTY | OpenFlags.O_NONBLOCK);
-
-            if (fd == -1)
-            {
-                Console.WriteLine($"failed to open port ({fd})");
-            }
-            else
-            {
-                Console.WriteLine(fd);
-
-                byte[] termios_data = new byte[256];
-
-                Console.WriteLine(tcgetattr(fd, termios_data));
-                WriteArray(termios_data);
-
-                Console.WriteLine(cfsetspeed(termios_data, Speed.B9600));
-                WriteArray(termios_data);
-
-                Console.WriteLine(tcsetattr(fd, 0, termios_data));
-
-//                byte[] buf = Encoding.ASCII.GetBytes("8");
-//                IntPtr ptr = Marshal.AllocHGlobal(buf.Length);
-//                Marshal.Copy(buf, 0, ptr, buf.Length);
-//
-//                Console.WriteLine(write(fd, ptr, buf.Length));
-//                Thread.Sleep(5000);
-//                Marshal.FreeHGlobal(ptr);
-                byte bbb = 0;
-                IntPtr ptr = Marshal.AllocHGlobal(1);
-
-                while (true)
-                {
-                    read(fd, ptr, 1);
-                    Console.Write(Marshal.PtrToStringAnsi(ptr));
-                }
-
-
-                Console.WriteLine(close(fd));
-            }
+            Send();
+            return;
         }
 
 //                IntPtr ptr = Marshal.AllocHGlobal(80);
