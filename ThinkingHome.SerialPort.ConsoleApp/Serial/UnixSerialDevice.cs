@@ -91,6 +91,7 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
             IntPtr ptr = Marshal.AllocHGlobal(buf.Length);
             Marshal.Copy(buf, 0, ptr, buf.Length);
             Libc.write(fd.Value, ptr, buf.Length);
+            Marshal.FreeHGlobal(ptr);
         }
     }
 }
