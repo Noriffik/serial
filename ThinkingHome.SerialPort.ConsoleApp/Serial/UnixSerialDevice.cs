@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ThinkingHome.SerialPort.ConsoleApp.Serial
 {
@@ -7,6 +11,8 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
     {
         private readonly string portName;
         private readonly BaudRate baudRate;
+        private Task reading;
+        private CancellationTokenSource cts;
 
         private int? fd;
 
@@ -18,7 +24,7 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
 
         public override void Open()
         {
-            int fd = Libc.open(portName, OpenFlags.O_RDWR | OpenFlags.O_NOCTTY | OpenFlags.O_NONBLOCK);
+            int fd = Libc.open(portName, OpenFlags.O_RDWR | OpenFlags.O_NONBLOCK);
 
             if (fd == -1)
             {
@@ -28,8 +34,44 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
             byte[] termiosData = new byte[256];
 
             Libc.tcgetattr(fd, termiosData);
-            Libc.cfsetspeed(termiosData, BaudRate.B9600);
+            Libc.cfsetspeed(termiosData, baudRate);
             Libc.tcsetattr(fd, 0, termiosData);
+
+            cts = new CancellationTokenSource();
+
+            reading = Task.Run(() =>
+            {
+                byte[] buf = new byte[1700];
+                IntPtr ptr = Marshal.AllocHGlobal(1700);
+
+                string xxx = String.Empty;
+
+                while (true)
+                {
+                    int res = Libc.read(fd, ptr, 1700);
+
+                    if (res != -1)
+                    {
+                        Marshal.Copy(ptr, buf, 0, res);
+
+                        for (var i = 0; i <= res; i++)
+                        {
+                            xxx += "." + buf[i].ToString("x2");
+
+                            if (xxx.Length / 3 == 18)
+                            {
+                                Console.WriteLine("read: {0}", xxx);
+                                xxx = String.Empty;
+                                buf = new byte[1700];
+                            }
+                        }
+                    }
+
+                    Thread.Sleep(50);
+
+                    cts.Token.ThrowIfCancellationRequested();
+                }
+            }, cts.Token);
 
             this.fd = fd;
         }
@@ -38,6 +80,7 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
         {
             if (fd.HasValue)
             {
+                cts.Cancel();
                 Libc.close(fd.Value);
             }
         }

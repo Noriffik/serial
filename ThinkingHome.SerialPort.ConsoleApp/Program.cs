@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using ThinkingHome.SerialPort.ConsoleApp.Serial;
 
 namespace ThinkingHome.SerialPort.ConsoleApp
@@ -10,7 +12,7 @@ namespace ThinkingHome.SerialPort.ConsoleApp
         {
             var data = new byte[17] {
                 171, //start
-                2, //mode
+                4, //mode
                 0, //cmd mode
                 0,
                 0, // channel
@@ -21,6 +23,19 @@ namespace ThinkingHome.SerialPort.ConsoleApp
                 0,
                 172 //end
             };
+//            var data = new byte[17] {
+//                171, //start
+//                2, //mode
+//                0, //cmd mode
+//                0,
+//                0, // channel
+//                0, //cmd
+//                0, //fmt
+//                0,0,0,0, //data
+//                0,0,0,0, //address
+//                0,
+//                172 //end
+//            };
 
 
             int sum = 0;
@@ -32,8 +47,29 @@ namespace ThinkingHome.SerialPort.ConsoleApp
             {
                 device.Open();
 
+                Console.WriteLine("======");
+                Console.WriteLine("write: {0}", string.Join(".", data.Select(b => b.ToString("x2"))));
                 device.Write(data);
+                Thread.Sleep(1000);
+
+                Console.WriteLine("======");
+                Console.WriteLine("write: {0}", string.Join(".", data.Select(b => b.ToString("x2"))));
+                device.Write(data);
+                Thread.Sleep(1000);
+
+                Console.WriteLine("======");
+                Console.WriteLine("write: {0}", string.Join(".", data.Select(b => b.ToString("x2"))));
+                device.Write(data);
+                Thread.Sleep(1000);
+
+                Console.WriteLine("======");
+                Console.WriteLine("write: {0}", string.Join(".", data.Select(b => b.ToString("x2"))));
+                device.Write(data);
+                Thread.Sleep(1000);
+                Console.ReadLine();
             }
+
+            Console.WriteLine("done");
         }
 
         public static void Main(string[] args)
