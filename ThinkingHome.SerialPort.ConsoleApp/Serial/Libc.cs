@@ -5,6 +5,16 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
 {
     public static class Libc
     {
+        [Flags]
+        public enum OpenFlags
+        {
+            O_RDONLY = 0,
+            O_WRONLY = 1,
+            O_RDWR = 2,
+
+            O_NONBLOCK = 4,
+        }
+
         [DllImport("libc")]
         public static extern int getpid();
 

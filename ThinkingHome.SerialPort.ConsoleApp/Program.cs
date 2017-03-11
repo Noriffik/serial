@@ -10,7 +10,7 @@ namespace ThinkingHome.SerialPort.ConsoleApp
     {
         private static void Send()
         {
-            var data = new byte[17] {
+            var data3 = new byte[17] {
                 171, //start
                 4, //mode
                 0, //cmd mode
@@ -23,19 +23,19 @@ namespace ThinkingHome.SerialPort.ConsoleApp
                 0,
                 172 //end
             };
-//            var data = new byte[17] {
-//                171, //start
-//                2, //mode
-//                0, //cmd mode
-//                0,
-//                0, // channel
-//                0, //cmd
-//                0, //fmt
-//                0,0,0,0, //data
-//                0,0,0,0, //address
-//                0,
-//                172 //end
-//            };
+            var data = new byte[17] {
+                171, //start
+                2, //mode
+                0, //cmd mode
+                0,
+                0, // channel
+                0, //cmd
+                0, //fmt
+                0,0,0,0, //data
+                0,0,0,0, //address
+                0,
+                172 //end
+            };
 
 
             int sum = 0;
