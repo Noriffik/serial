@@ -4,7 +4,7 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
 {
     public class WindowsSerialDevice : SerialDevice
     {
-        public WindowsSerialDevice(string portName, BaudRate baudRate)
+        public WindowsSerialDevice(string portName, BaudRate baudRate) : base(portName, baudRate)
         {
             throw new NotImplementedException();
         }
@@ -23,6 +23,8 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
         {
             throw new NotImplementedException();
         }
+
+        public override bool IsOpened { get; }
 
         public override void Dispose()
         {

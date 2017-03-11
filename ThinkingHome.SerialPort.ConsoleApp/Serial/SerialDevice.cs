@@ -13,7 +13,7 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
             this.portName = portName;
             this.baudRate = baudRate;
         }
-s
+
         public abstract void Open();
 
         public abstract void Close();

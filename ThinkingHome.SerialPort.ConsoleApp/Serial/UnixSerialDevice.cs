@@ -7,11 +7,13 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
 {
     public class UnixSerialDevice : SerialDevice
     {
+        public const int READING_BUFFER_SIZE = 1024;
+
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private CancellationToken CancellationToken => cts.Token;
 
         private int? fd;
-        private Task reading;
+        private readonly IntPtr readingBuffer = Marshal.AllocHGlobal(READING_BUFFER_SIZE);
 
         public UnixSerialDevice(string portName, BaudRate baudRate) : base(portName, baudRate)
         {
@@ -35,27 +37,34 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
             Libc.tcsetattr(fd, 0, termiosData);
 
             // start reading
-            reading = Task.Run(() =>
-            {
-                IntPtr ptr = Marshal.AllocHGlobal(1024);
-
-                while (!CancellationToken.IsCancellationRequested)
-                {
-                    int res = Libc.read(fd, ptr, 1024);
-
-                    if (res != -1)
-                    {
-                        byte[] buf = new byte[res];
-                        Marshal.Copy(ptr, buf, 0, res);
-
-                        OnDataReceived(buf);
-                    }
-
-                    Thread.Sleep(50);
-                }
-            }, CancellationToken);
+            Task.Run((Action)StartReading, CancellationToken);
 
             this.fd = fd;
+        }
+
+        private void StartReading()
+        {
+            if (!fd.HasValue)
+            {
+                throw new Exception();
+            }
+
+            while (true)
+            {
+                CancellationToken.ThrowIfCancellationRequested();
+
+                int res = Libc.read(fd.Value, readingBuffer, READING_BUFFER_SIZE);
+
+                if (res != -1)
+                {
+                    byte[] buf = new byte[res];
+                    Marshal.Copy(readingBuffer, buf, 0, res);
+
+                    OnDataReceived(buf);
+                }
+
+                Thread.Sleep(50);
+            }
         }
 
         public override bool IsOpened => fd.HasValue;
@@ -68,8 +77,8 @@ namespace ThinkingHome.SerialPort.ConsoleApp.Serial
             }
 
             cts.Cancel();
-            reading.Wait(CancellationToken);
             Libc.close(fd.Value);
+            Marshal.FreeHGlobal(readingBuffer);
         }
 
         public override void Write(byte[] buf)
