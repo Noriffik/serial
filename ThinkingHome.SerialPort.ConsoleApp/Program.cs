@@ -21,37 +21,17 @@ namespace ThinkingHome.SerialPort.ConsoleApp
 
         private static void Send()
         {
-            var data3 = new byte[17] {
-                171, //start
-                4, //mode
-                0, //cmd mode
-                0,
-                0, // channel
-                0, //cmd
-                0, //fmt
-                0,0,0,0, //data
-                0,0,0,0, //address
-                0,
-                172 //end
-            };
-            var data = new byte[17] {
-                171, //start
-                2, //mode
-                0, //cmd mode
-                0,
-                0, // channel
-                2, //cmd
-                0, //fmt
-                0,0,0,0, //data
-                0,0,0,0, //address
-                0,
-                172 //end
-            };
+            var cmdService = MTRFXXAdapter.BuildCommand(
+                MTRFXXAdapter.MTRFMode.Service, MTRFXXAdapter.MTRFAction.SendCommand, MTRFXXAdapter.MTRFRepeatCount.NoRepeat,
+                0, MTRFXXAdapter.MTRFCommand.Off, MTRFXXAdapter.MTRFDataFormat.NoData, null);
 
-            int sum = 0;
-            for (int i = 0; i < 15; i++) sum += data[i];
+            var cmdOn = MTRFXXAdapter.BuildCommand(
+                MTRFXXAdapter.MTRFMode.TXF, MTRFXXAdapter.MTRFAction.SendCommand, MTRFXXAdapter.MTRFRepeatCount.One,
+                0, MTRFXXAdapter.MTRFCommand.On, MTRFXXAdapter.MTRFDataFormat.NoData, null);
 
-            data[15] = (byte)(sum % 256);
+            var cmdOff = MTRFXXAdapter.BuildCommand(
+                MTRFXXAdapter.MTRFMode.TXF, MTRFXXAdapter.MTRFAction.SendCommand, MTRFXXAdapter.MTRFRepeatCount.Three,
+                0, MTRFXXAdapter.MTRFCommand.Off, MTRFXXAdapter.MTRFDataFormat.NoData, null);
 
             using (var device = SerialDevice.Create("/dev/cu.usbserial-AI04XT35", BaudRate.B9600))
             {
@@ -59,11 +39,19 @@ namespace ThinkingHome.SerialPort.ConsoleApp
 
                 device.DataReceived += DeviceOnDataReceived;
 
-                for (var i = 0; i < 10; i++)
+                Console.WriteLine("write: {0}", string.Join(".", cmdService.Select(b => b.ToString("x2"))));
+                device.Write(cmdService);
+                Thread.Sleep(500);
+
+                for (var i = 0; i < 3; i++)
                 {
-                    Console.WriteLine("write: {0}", string.Join(".", data.Select(b => b.ToString("x2"))));
-                    device.Write(data);
-                    Thread.Sleep(500);
+                    Console.WriteLine("write: {0}", string.Join(".", cmdOn.Select(b => b.ToString("x2"))));
+                    device.Write(cmdOn);
+                    Thread.Sleep(2000);
+
+                    Console.WriteLine("write: {0}", string.Join(".", cmdOff.Select(b => b.ToString("x2"))));
+                    device.Write(cmdOff);
+                    Thread.Sleep(2000);
                 }
 
                 Console.WriteLine("done");
