@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
-using ThinkingHome.SerialPort.ConsoleApp.Serial;
+using ThinkingHome.SerialPort.ConsoleApp.Internal;
 
 namespace ThinkingHome.SerialPort.ConsoleApp
 {
@@ -21,36 +21,22 @@ namespace ThinkingHome.SerialPort.ConsoleApp
 
         private static void Send()
         {
-            var cmdService = MTRFXXAdapter.BuildCommand(
-                MTRFXXAdapter.MTRFMode.Service, MTRFXXAdapter.MTRFAction.SendCommand, MTRFXXAdapter.MTRFRepeatCount.NoRepeat,
-                0, MTRFXXAdapter.MTRFCommand.Off, MTRFXXAdapter.MTRFDataFormat.NoData, null);
-
-            var cmdOn = MTRFXXAdapter.BuildCommand(
-                MTRFXXAdapter.MTRFMode.TXF, MTRFXXAdapter.MTRFAction.SendCommand, MTRFXXAdapter.MTRFRepeatCount.One,
-                0, MTRFXXAdapter.MTRFCommand.On, MTRFXXAdapter.MTRFDataFormat.NoData, null);
-
-            var cmdOff = MTRFXXAdapter.BuildCommand(
-                MTRFXXAdapter.MTRFMode.TXF, MTRFXXAdapter.MTRFAction.SendCommand, MTRFXXAdapter.MTRFRepeatCount.Three,
-                0, MTRFXXAdapter.MTRFCommand.Off, MTRFXXAdapter.MTRFDataFormat.NoData, null);
-
-            using (var device = SerialDevice.Create("/dev/cu.usbserial-AI04XT35", BaudRate.B9600))
+            using (var device = new MTRFXXAdapter("/dev/cu.usbserial-AI04XT35"))
             {
-                device.Open();
-
                 device.DataReceived += DeviceOnDataReceived;
 
-                Console.WriteLine("write: {0}", string.Join(".", cmdService.Select(b => b.ToString("x2"))));
-                device.Write(cmdService);
+                device.Open();
+
+                device.SendCommand(MTRFMode.Service, MTRFAction.SendCommand, 0, MTRFCommand.Off);
+
                 Thread.Sleep(500);
 
                 for (var i = 0; i < 3; i++)
                 {
-                    Console.WriteLine("write: {0}", string.Join(".", cmdOn.Select(b => b.ToString("x2"))));
-                    device.Write(cmdOn);
+                    device.SendCommand(MTRFMode.TXF, MTRFAction.SendCommand, 0, MTRFCommand.On);
                     Thread.Sleep(2000);
 
-                    Console.WriteLine("write: {0}", string.Join(".", cmdOff.Select(b => b.ToString("x2"))));
-                    device.Write(cmdOff);
+                    device.SendCommand(MTRFMode.TXF, MTRFAction.SendCommand, 0, MTRFCommand.Off);
                     Thread.Sleep(2000);
                 }
 

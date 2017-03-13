@@ -1,54 +1,58 @@
 ﻿using System;
-using System.Threading.Tasks.Dataflow;
+using ThinkingHome.SerialPort.ConsoleApp.Internal;
+using ThinkingHome.SerialPort.ConsoleApp.Serial;
 
 namespace ThinkingHome.SerialPort.ConsoleApp
 {
-    public class MTRFXXAdapter
+    public class MTRFXXAdapter : IDisposable
     {
+        #region common
+
+        private readonly SerialDevice device;
+
+        public MTRFXXAdapter(string portName)
+        {
+            device = SerialDevice.Create(portName, BaudRate.B9600);
+            device.DataReceived += OnDataReceived;
+        }
+
+        public void Open()
+        {
+            device.Open();
+        }
+
+        public bool IsOpened => device.IsOpened;
+
+        public void Dispose()
+        {
+            device.Dispose();
+        }
+
+        #endregion
+
+        #region commands
+
+        public event Action<object, byte[]> DataReceived;
+
+        private void OnDataReceived(object sender, byte[] data)
+        {
+            DataReceived?.Invoke(this, data);
+        }
+
+        public void SendCommand(MTRFMode mode, MTRFAction action, byte channel, MTRFCommand command,
+            MTRFRepeatCount repeatCount = MTRFRepeatCount.NoRepeat, MTRFDataFormat format = MTRFDataFormat.NoData,
+            byte[] data = null, UInt32 target = 0)
+        {
+            var cmd = BuildCommand(mode, action, repeatCount, channel, command, format, data, target);
+            device.Write(cmd);
+        }
+
+        #endregion
+
+        #region commands: static
+
         private const byte START_MARKER = 171;
         private const byte STOP_MARKER = 172;
-
-        public enum MTRFMode : byte
-        {
-            TX = 0,
-            RX = 1,
-            TXF = 2,
-            RXF = 3,
-            Service = 4,
-            Update = 5
-        }
-
-        public enum MTRFAction : byte
-        {
-            SendCommand = 0,
-            SendBroadcastCommand = 1,
-            ReadResponseBuffer = 2,
-            StartBinding = 3,
-            StopBinding = 4,
-            ClearChannel = 5,
-            ClearAllChannels = 6,
-            Unbind = 7,
-            SendTargetedCommand = 8
-        }
-
-        public enum MTRFRepeatCount : byte
-        {
-            NoRepeat = 0,
-            One = 1,
-            Two = 2,
-            Three = 3
-        }
-
-        public enum MTRFCommand : byte
-        {
-            Off = 0,
-            On = 2,
-        }
-
-        public enum MTRFDataFormat : byte
-        {
-            NoData = 0
-        }
 
         public static byte[] BuildCommand(MTRFMode mode, MTRFAction action, MTRFRepeatCount repeatCount, byte channel,
             MTRFCommand command, MTRFDataFormat format, byte[] data, UInt32 target = 0)
@@ -74,5 +78,7 @@ namespace ThinkingHome.SerialPort.ConsoleApp
 
             return res;
         }
+
+        #endregion
     }
 }
